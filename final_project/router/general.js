@@ -52,27 +52,43 @@ public_users.get('/', async (req, res) => {
 public_users.get('/isbn/:isbn', (req, res) => {
     const isbn = req.params.isbn;
 
-    if (books[isbn]) {
-        return res.status(200).json({ book: books[isbn] });
-    } else {
-        return res.status(404).json({ message: "Book not found" });
-    }
+    // Using a Promise to simulate an asynchronous database call
+    new Promise((resolve, reject) => {
+        if (books[isbn]) {
+            resolve(books[isbn]);
+        } else {
+            reject("Book not found");
+        }
+    })
+    .then(book => res.status(200).json({ book }))
+    .catch(error => res.status(404).json({ message: error }));
 });
+
   
 // Get book details based on author
-public_users.get('/author/:author', (req, res) => {
+public_users.get('/author/:author', async (req, res) => {
     const author = req.params.author;
 
-    let filteredBooks = Object.entries(books)
-        .filter(([key, book]) => book.author.toLowerCase() === author.toLowerCase())
-        .map(([key, book]) => ({ isbn: key, ...book }));
+    try {
+        // Simulating an async database query using async-await
+        const filteredBooks = await new Promise((resolve, reject) => {
+            let result = Object.entries(books)
+                .filter(([key, book]) => book.author.toLowerCase() === author.toLowerCase())
+                .map(([key, book]) => ({ isbn: key, ...book }));
 
-    if (filteredBooks.length > 0) {
-        return res.status(200).json({ books: filteredBooks });
-    } else {
-        return res.status(404).json({ message: "No books found for this author" });
+            if (result.length > 0) {
+                resolve(result);
+            } else {
+                reject("No books found for this author");
+            }
+        });
+
+        res.status(200).json({ books: filteredBooks });
+    } catch (error) {
+        res.status(404).json({ message: error });
     }
 });
+
 
 // Get all books based on title
 public_users.get('/title/:title', async (req, res) => {
